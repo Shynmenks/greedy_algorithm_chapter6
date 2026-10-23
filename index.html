@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1624">
+<meta name="description" content="Classroom presentation on greedy algorithms and the activity selection problem.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<title>Greedy Algorithms and Activity Selection - Chapter 6</title>
+<style>
+:root{--bg:#0f1624;--card:#172238;--line:#2a3a5a;--tx:#e8eefb;--mut:#9fb0cc;--ac:#4da3ff;--bad:#ff8080;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--tx);font:17px/1.55 system-ui,"Segoe UI",Roboto,sans-serif;overflow:hidden}
+#bar{position:fixed;top:0;left:0;height:4px;background:var(--ac);width:0;transition:width .3s;z-index:5}
+.slide{position:absolute;inset:0;display:none;overflow-y:auto;padding-top:env(safe-area-inset-top)}
+.slide.on{display:block}
+.wrap{max-width:980px;margin:0 auto;padding:48px 24px 120px}
+.kick{color:var(--ac);font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:600}
+h1,h2{font-family:Georgia,"Times New Roman",serif;line-height:1.15;margin:.3em 0 .5em}
+h1{font-size:clamp(34px,6vw,58px)}h2{font-size:clamp(28px,4.5vw,42px)}
+h3{margin:0 0 .4em;color:var(--ac);font-size:18px}
+p{margin:.5em 0}.mut{color:var(--mut)}
+.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));margin:20px 0}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+.card.bad{border-color:#5a3a4a}.card.bad h3{color:var(--bad)}
+ul,ol{padding-left:1.2em;margin:.4em 0}li{margin:.3em 0}
+code,pre{font-family:ui-monospace,Consolas,monospace}
+pre{background:#0a1020;border:1px solid var(--line);border-radius:12px;padding:16px;overflow-x:auto;font-size:15px;margin:14px 0}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin:14px 0;font-size:16px}
+th,td{border-bottom:1px solid var(--line);padding:9px 12px;text-align:left}
+th{color:var(--mut);font-weight:600;font-size:13px;text-transform:uppercase;letter-spacing:.08em}
+.take{color:var(--ac);font-weight:600}.skip{color:var(--bad);font-weight:600}
+.big{font-size:clamp(30px,5vw,48px);font-family:Georgia,serif;color:var(--ac)}
+button{font:inherit;background:var(--ac);color:#04101f;border:0;border-radius:10px;padding:9px 18px;font-weight:600;cursor:pointer}
+button.ghost{background:transparent;color:var(--tx);border:1px solid var(--line)}
+button:disabled{opacity:.35;cursor:default}
+#nav{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:center;align-items:center;gap:16px;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:linear-gradient(transparent,var(--bg) 40%);z-index:5}
+#count{color:var(--mut);min-width:170px;text-align:center;font-size:14px}
+.tl,.gt{display:flex;flex-direction:column;gap:6px;margin:12px 0}
+.tl div,.gt div{height:22px;border-radius:6px;background:#22314d;font-size:12px;padding-left:8px;line-height:22px;color:var(--mut)}
+.tl div.t,.gt div.t{background:var(--ac);color:#04101f;font-weight:700}
+.slide.on{animation:sl .45s cubic-bezier(.2,.7,.2,1)}
+.slide.on .wrap>*{animation:up .55s cubic-bezier(.2,.7,.2,1) both}
+.slide.on .wrap>*:nth-child(2){animation-delay:.06s}.slide.on .wrap>*:nth-child(3){animation-delay:.12s}
+.slide.on .wrap>*:nth-child(4){animation-delay:.18s}.slide.on .wrap>*:nth-child(5){animation-delay:.24s}
+.slide.on .wrap>*:nth-child(n+6){animation-delay:.3s}
+.grid>.card:nth-child(2){animation:up .55s .15s both}.grid>.card:nth-child(3){animation:up .55s .25s both}
+@keyframes sl{from{opacity:0;transform:translateX(var(--dx,40px))}to{opacity:1;transform:none}}
+@keyframes up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+#bar{transition:width .5s cubic-bezier(.2,.7,.2,1)}
+button{transition:transform .15s,opacity .2s}button:not(:disabled):hover{transform:translateY(-2px)}
+@keyframes in{from{opacity:0;transform:translateX(-24px)}to{opacity:1;transform:none}}
+.slide.on .steps li,.slide.on .card li,.slide.on .card p,.slide.on .card h3,.slide.on pre{animation:in .5s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(.35s + var(--k,0)*.12s)}
+.slide.on:not(#s5) tbody tr,.slide.on:not(#s5) table tr{animation:in .5s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(.3s + var(--k,0)*.1s)}
+.slide.on .steps li{animation-delay:calc(.45s + var(--k,0)*.18s)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.panel[hidden]{display:none}
+.steps{list-style:none;padding:0;counter-reset:n;display:grid;gap:14px;margin:16px 0}
+.steps li{counter-increment:n;display:flex;align-items:center;gap:18px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 20px;font-size:20px;font-size:18px;padding:12px 16px}
+.steps li::before{content:counter(n);flex:none;width:44px;height:44px;border-radius:50%;background:var(--ac);color:#04101f;font:700 22px Georgia,serif;display:grid;place-items:center}
+.steps li{padding:12px 16px}
+.rv{opacity:0;transform:translateY(22px);transition:opacity .55s,transform .55s cubic-bezier(.2,.7,.2,1)}
+.rv.in{opacity:1;transform:none}
+.slide.on .wrap *{animation:none!important}
+
+:root{--pk:#ff9ecb;--yl:#ffd86b;--mint:#7ee8c7}
+body{font-family:"Nunito",system-ui,"Segoe UI",sans-serif;background:radial-gradient(600px 400px at 10% 12%,rgba(77,163,255,.22),transparent 70%),radial-gradient(520px 420px at 92% 20%,rgba(255,158,203,.16),transparent 70%),radial-gradient(600px 500px at 80% 95%,rgba(126,232,199,.12),transparent 70%),var(--bg)}
+h1,h2,.big{font-family:"Fredoka","Nunito",system-ui,sans-serif;font-weight:600;letter-spacing:.01em}
+h1,h2{background:linear-gradient(90deg,#fff,#a9d3ff 55%,var(--pk));-webkit-background-clip:text;background-clip:text;color:transparent}
+h2::after,h1::after{content:" ✨";-webkit-text-fill-color:initial}
+.kick{display:inline-block;background:rgba(77,163,255,.14);border:1px solid rgba(77,163,255,.35);border-radius:999px;padding:4px 14px}
+.card{border-radius:22px;box-shadow:0 6px 22px rgba(0,0,0,.25)}
+.card h3{font-family:"Fredoka",sans-serif;font-weight:500}
+.card h3::before{content:"✦";margin-right:.45em;color:var(--pk)}
+.grid>.card:nth-child(2n) h3::before{color:var(--yl)}.grid>.card:nth-child(3n) h3::before{color:var(--mint)}
+.card.bad h3::before{content:"⚠️";color:inherit}
+.rv{transition:opacity .55s,transform .65s cubic-bezier(.34,1.56,.64,1)}
+.rv.in.card:hover{transform:translateY(-4px) rotate(-.5deg);box-shadow:0 12px 32px rgba(77,163,255,.22)}
+.steps li{border-radius:20px}
+.steps li::before{background:linear-gradient(135deg,var(--ac),var(--pk));color:#fff}
+tbody tr:hover td,table tr:hover td{background:rgba(77,163,255,.07)}
+button{border-radius:999px;font-family:"Fredoka",sans-serif;font-weight:500;padding:10px 22px}
+button:not(:disabled):hover{transform:translateY(-3px) scale(1.04)}
+#bar{background:linear-gradient(90deg,var(--ac),var(--pk),var(--yl));overflow:visible}
+#bar::after{content:"🪙";position:absolute;right:-12px;top:-7px;font-size:18px}
+.bgf{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:0}
+.bgf span{position:absolute;opacity:.16;animation:flt 10s ease-in-out infinite}
+@keyframes flt{0%,100%{transform:translateY(0) rotate(-6deg)}50%{transform:translateY(-22px) rotate(8deg)}}
+.slide{z-index:1}
+#mas{position:fixed;left:14px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:6;display:flex;align-items:flex-end;gap:8px;pointer-events:none;max-width:min(300px,38vw)}
+#mas b{font-size:46px;line-height:1;animation:hop 2.4s ease-in-out infinite;display:block}
+#say{background:var(--card);border:1px solid var(--line);border-radius:18px 18px 18px 4px;padding:8px 12px;font-size:13px;line-height:1.35;color:var(--tx);box-shadow:0 6px 18px rgba(0,0,0,.3)}
+@keyframes hop{0%,100%{transform:translateY(0)}40%{transform:translateY(-10px) rotate(-6deg)}}
+.cf{position:fixed;top:-30px;z-index:9;pointer-events:none;animation:cf linear forwards}
+@keyframes cf{to{transform:translateY(112vh) rotate(540deg)}}
+@media (max-width:760px){#say{display:none}#mas b{font-size:34px}}
+@media (prefers-reduced-motion:reduce){.cf,.bgf span{display:none}}
+a.card{display:block;color:inherit;text-decoration:none;cursor:pointer}
+.opt{display:block;width:100%;text-align:left;background:transparent;color:var(--tx);border:1px solid var(--line);border-radius:14px;padding:9px 14px;margin:7px 0;font:600 15px/1.4 "Nunito",system-ui,sans-serif}
+.opt:hover{border-color:var(--ac);background:rgba(77,163,255,.08)}
+.opt.ok{background:rgba(126,232,199,.2);border-color:var(--mint)}
+.opt.no{background:rgba(255,128,128,.16);border-color:var(--bad)}
+.q[data-done] .opt{cursor:default}
+.tt{float:right;font-family:"Fredoka",sans-serif;font-size:16px;color:var(--yl)}
+.tt.low{color:var(--bad);animation:pulse 1s infinite}
+@keyframes pulse{50%{transform:scale(1.12)}}
+.tb{height:7px;border-radius:99px;background:#22314d;overflow:hidden;margin:2px 0 12px}
+.tb i{display:block;height:100%;width:100%;background:linear-gradient(90deg,var(--mint),var(--ac));transition:width 1s linear}
+.tb i.low{background:var(--bad)}
+.q.late{border-color:#5a3a4a}
+.opt.sel{background:rgba(77,163,255,.22);border-color:var(--ac)}
+</style>
+</head>
+<body>
+<div id="bar"></div>
+<div class="bgf" aria-hidden="true"><span style="left:6%;top:18%;font-size:34px;animation-delay:-1s">🪙</span><span style="left:88%;top:12%;font-size:28px;animation-delay:-3s">⭐</span><span style="left:14%;top:72%;font-size:26px;animation-delay:-5s">✨</span><span style="left:92%;top:62%;font-size:30px;animation-delay:-2s">💙</span><span style="left:46%;top:6%;font-size:24px;animation-delay:-6s">🪙</span><span style="left:72%;top:84%;font-size:26px;animation-delay:-4s">⭐</span><span style="left:30%;top:40%;font-size:22px;animation-delay:-7s">✨</span><span style="left:60%;top:52%;font-size:24px;animation-delay:-8s">🎀</span></div>
+
+<section class="slide" id="xi"><div class="wrap">
+<div class="kick">What’s Inside · Index</div>
+<h2>Greedy Algorithms and Activity Selection - Chapter 6</h2>
+<p class="mut">Click any topic to jump straight to it.</p><div class="grid"><a class="card" href="#" data-go="2"><h3>1 · Introduction to Greedy Algorithms</h3><p class="mut">Slides 2–3</p></a><a class="card" href="#" data-go="4"><h3>2 · Greedy-Choice Property and Optimal Substructure</h3><p class="mut">Slide 4</p></a><a class="card" href="#" data-go="5"><h3>3 · Activity Selection / Unweighted Interval Scheduling</h3><p class="mut">Slide 5</p></a><a class="card" href="#" data-go="6"><h3>4 · Earliest-Finish-Time Strategy</h3><p class="mut">Slides 6–7</p></a><a class="card" href="#" data-go="8"><h3>5 · Tracing the Activity Selection Algorithm</h3><p class="mut">Slides 8–11</p></a><a class="card" href="#" data-go="12"><h3>6 · Activity Selection Time Complexity</h3><p class="mut">Slides 12–13</p></a><a class="card" href="#" data-go="14"><h3>7 · Why Earliest Finish Works</h3><p class="mut">Slide 14</p></a><a class="card" href="#" data-go="15"><h3>8 · When Greedy Algorithms Fail</h3><p class="mut">Slides 15–17</p></a><a class="card" href="#" data-go="18"><h3>9 · Quiz Time: 15 Questions 🎯</h3><p class="mut">Slides 18–25</p></a><a class="card" href="#" data-go="26"><h3>10 · Quiz Answer Key 🔑</h3><p class="mut">Slide 26</p></a></div>
+</div></section>
+
+<section class="slide" id="s1"><div class="wrap">
+<div class="kick">Greedy Algorithms · 1 of 8</div>
+<h1>Introduction to Greedy Algorithms</h1>
+<p>A greedy algorithm builds a solution piece by piece, always taking the choice that looks best right now, and never goes back to change it.</p>
+<div class="grid" style="align-items:start">
+<div><h3>How it works</h3>
+<ol class="steps">
+<li>Start from the initial state.</li>
+<li>Look at the options available.</li>
+<li>Take the best-looking one.</li>
+<li>Repeat until done.</li>
+</ol></div>
+<div><h3>Classic greedy algorithms</h3>
+<div class="card"><p>Fractional Knapsack, Dijkstra, Kruskal, Prim, Huffman coding, Activity Selection.</p></div>
+<div class="card" style="margin-top:14px"><h3>Coins 1, 2, 5, 10: make 39</h3><p>10 + 10 + 10, then 5, then 2 + 2. <b>6 coins</b>, optimal.</p></div></div>
+</div>
+<div class="card bad"><h3>But not always optimal</h3>
+<p>Make 20 with coins 18, 10, 1. Greedy takes 18 + 1 + 1 = 3 coins. Better: 10 + 10 = 2 coins.</p></div>
+</div></section>
+
+<section class="slide" id="x2"><div class="wrap">
+<div class="kick">Greedy Algorithms · 1 of 8</div>
+<h2>Characteristics of Greedy Algorithms</h2>
+<div class="grid"><div class="card"><h3>Simple</h3><p>Easy to implement and easy to reason about.</p></div><div class="card"><h3>Efficient</h3><p>Often quick. Preferred over dynamic programming where both apply: Jump Game, and Dijkstra over Bellman-Ford when no weights are negative.</p></div><div class="card"><h3>No looking back</h3><p>Decisions use current information only. Previous choices are never reconsidered and the algorithm does not look ahead.</p></div><div class="card"><h3>Approximation for hard problems</h3><p>Traveling Salesman (NP-hard): always go to the nearest unvisited city. Not always optimal, but approximately optimal.</p></div></div>
+</div></section>
+
+<section class="slide" id="s2"><div class="wrap">
+<div class="kick">Greedy Algorithms · 2 of 8</div>
+<h2>Greedy-Choice Property and Optimal Substructure</h2>
+<p class="mut">A problem needs both for a greedy algorithm to be correct.</p>
+<div class="grid">
+<div class="card"><h3>Greedy-choice property</h3><p>Some optimal solution always contains the greedy choice, so earlier decisions never need reconsidering.</p><p class="mut"><b>Proof:</b> exchange argument. Take any optimal solution, swap in the greedy choice, show it is no worse.</p></div>
+<div class="card"><h3>Optimal substructure</h3><p>An optimal solution contains optimal solutions to its subproblems. After the greedy choice, one smaller problem of the same form remains.</p><p class="mut"><b>Proof:</b> cut-and-paste. A better subsolution would improve the whole, a contradiction.</p></div>
+</div>
+<div class="card"><h3>Greedy vs. dynamic programming</h3><p>DP tries all choices and picks the best after solving subproblems. Greedy commits to one choice <i>before</i> solving subproblems. Optimal substructure is shared; the greedy-choice property is what greedy adds.</p></div>
+</div></section>
+
+<section class="slide" id="x4"><div class="wrap">
+<div class="kick">Greedy Algorithms · 3 of 8</div>
+<h2>Activity Selection / Unweighted Interval Scheduling</h2>
+<p>One room, many requests, each with a start and finish time. Only one activity at a time. Choose the largest set that does not overlap.</p><div class="tw"><table><tr><th>Term</th><th>Meaning</th></tr><tr><td>Input</td><td>n activities, each with a start time and a finish time</td></tr><tr><td>Compatible</td><td>One finishes before (or exactly when) the other starts</td></tr><tr><td>Goal</td><td>Largest set where every pair is compatible</td></tr><tr><td>Unweighted</td><td>Every activity counts as 1; only the count matters</td></tr></table></div><div class="card"><h3>Applications</h3><p>Classroom or meeting-room scheduling · CPU and task scheduling · single-machine job scheduling · booking events at a single venue.</p></div>
+</div></section>
+
+<section class="slide" id="x5"><div class="wrap">
+<div class="kick">Greedy Algorithms · 4 of 8</div>
+<h2>Earliest-Finish-Time Strategy</h2>
+<p>Always pick the activity that finishes first. Finishing early leaves the most room for what comes next.</p><div class="grid"><div class="card"><h3>The rule</h3><ol><li>Sort activities by finish time.</li><li>Pick the first one.</li><li>Pick the next whose start ≥ last finish.</li><li>Repeat until none are left.</li></ol></div><div class="card"><h3>Pseudocode</h3><pre>sort activities by finish time
+selected = [first activity]
+last = finish of first
+for each remaining activity a:
+    if start(a) &gt;= last:
+        add a to selected
+        last = finish(a)
+return selected</pre></div></div><div class="card"><h3>Why it makes sense</h3><p>The earlier an activity ends, the more time remains. We never waste room on a long activity when one that ends sooner is available. The sort is the expensive line; the loop is one pass.</p></div>
+</div></section>
+
+<section class="slide" id="x6"><div class="wrap">
+<div class="kick">Greedy Algorithms · 4 of 8</div>
+<h2>Why Not Other Strategies?</h2>
+<div class="tw"><table><tr><th>Strategy</th><th>Activities</th><th>Greedy picks</th><th>Optimal</th></tr><tr><td>Earliest start</td><td>X(1,10), Y(2,3), Z(4,5)</td><td>X only = 1</td><td>Y and Z = 2</td></tr><tr><td>Earliest start</td><td>A(0,10), B(1,2), C(3,4)</td><td>A only = 1</td><td>B and C = 2</td></tr><tr><td>Shortest duration</td><td>A(1,5), B(4,7), C(6,10)</td><td>B only = 1 (blocks A, C)</td><td>A and C = 2</td></tr><tr><td>Shortest duration</td><td>(1,5), (4,6), (5,9)</td><td>(4,6) only = 1</td><td>(1,5) and (5,9) = 2</td></tr><tr><td>Fewest conflicts</td><td>works on some inputs</td><td>has counterexamples</td><td>needs a proof</td></tr></table></div><div class="card"><h3>Earliest finish on A(1,4) B(3,5) C(0,6) D(5,7) E(8,9)</h3><p>Pick A (ends 4). Skip B and C (they overlap A). Pick D (starts 5). Pick E (starts 8). <b>Result: A, D, E = 3 activities.</b> Earliest start would take C(0,6) and block A, D, E.</p><p class="mut">A rule that sounds smart still needs a proof.</p></div>
+</div></section>
+
+<section class="slide" id="s5"><div class="wrap">
+<div class="kick">Greedy Algorithms · 5 of 8</div>
+<h2>Tracing the Algorithm: Example 1</h2>
+<p class="mut">Activities sorted by finish time. Step through and compare each start to <b>last</b>.</p>
+<div><button id="nx">Next step</button> <button class="ghost" id="rs">Reset</button></div>
+<div class="tw"><table><thead><tr><th>Activity</th><th>Start</th><th>Finish</th><th>Check</th><th>Decision</th></tr></thead><tbody id="tb"></tbody></table></div>
+<div class="tl" id="tl"></div>
+<p id="res" class="big"></p>
+</div></section>
+
+<section class="slide" id="x8"><div class="wrap">
+<div class="kick">Greedy Algorithms · 5 of 8</div>
+<h2>Tracing the Algorithm: Example 2</h2>
+<div class="tw"><table><tr><th>Activity</th><th>Check</th><th>Decision</th><th>Selected</th><th>last</th></tr><tr><td>A (1,3)</td><td>first activity</td><td class="take">Take</td><td>{A}</td><td>3</td></tr><tr><td>B (2,5)</td><td>2 &lt; 3</td><td class="skip">Skip</td><td>{A}</td><td>3</td></tr><tr><td>C (4,7)</td><td>4 ≥ 3</td><td class="take">Take</td><td>{A, C}</td><td>7</td></tr><tr><td>D (1,8)</td><td>1 &lt; 7</td><td class="skip">Skip</td><td>{A, C}</td><td>7</td></tr><tr><td>E (5,9)</td><td>5 &lt; 7</td><td class="skip">Skip</td><td>{A, C}</td><td>7</td></tr><tr><td>F (8,10)</td><td>8 ≥ 7</td><td class="take">Take</td><td>{A, C, F}</td><td>10</td></tr></table></div><div class="gt"><div class="t" style="margin-left:10%;width:20%;">A (1–3)</div><div class="" style="margin-left:20%;width:30%;opacity:.45">B (2–5)</div><div class="t" style="margin-left:40%;width:30%;">C (4–7)</div><div class="" style="margin-left:10%;width:70%;opacity:.45">D (1–8)</div><div class="" style="margin-left:50%;width:40%;opacity:.45">E (5–9)</div><div class="t" style="margin-left:80%;width:20%;">F (8–10)</div></div><p class="big">Answer: A, C, F = 3 activities</p><p class="mut">Blue = selected, faded = skipped. Time runs 0 to 10.</p>
+</div></section>
+
+<section class="slide" id="x9"><div class="wrap">
+<div class="kick">Greedy Algorithms · 5 of 8</div>
+<h2>Tracing the Algorithm: Eleven Activities</h2>
+<div class="tw"><table><tr><th>Activity</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th><th>10</th><th>11</th></tr><tr><td>Start</td><td>1</td><td>3</td><td>0</td><td>5</td><td>3</td><td>5</td><td>6</td><td>8</td><td>8</td><td>2</td><td>12</td></tr><tr><td>Finish</td><td>4</td><td>5</td><td>6</td><td>7</td><td>9</td><td>9</td><td>10</td><td>11</td><td>12</td><td>14</td><td>16</td></tr><tr><td>Greedy</td><td class="take">Pick</td><td class="skip">Skip</td><td class="skip">Skip</td><td class="take">Pick</td><td class="skip">Skip</td><td class="skip">Skip</td><td class="skip">Skip</td><td class="take">Pick</td><td class="skip">Skip</td><td class="skip">Skip</td><td class="take">Pick</td></tr></table></div><div class="card"><h3>Result: activities 1, 4, 8 and 11</h3><ul><li>One pass, each activity looked at exactly once, ending with four compatible activities.</li><li>Check: 1 ends at 4, 4 starts at 5 (ends 7), 8 starts at 8 (ends 11), 11 starts at 12.</li><li>This is the standard textbook example (CLRS, section 16.1).</li></ul></div>
+</div></section>
+
+<section class="slide" id="x10"><div class="wrap">
+<div class="kick">Greedy Algorithms · 5 of 8</div>
+<h2>Python Implementation</h2>
+<pre>def activity_selection(activities):
+    # activities: list of (name, start, finish)
+    activities.sort(key=lambda a: a[2])      # sort by finish time
+    selected = [activities[0]]
+    last_finish = activities[0][2]
+    for name, start, finish in activities[1:]:
+        if start &gt;= last_finish:              # compatible
+            selected.append((name, start, finish))
+            last_finish = finish
+    return selected
+
+acts = [("A",1,3),("B",2,5),("C",4,7),("D",1,8),("E",5,9),("F",8,10)]
+result = activity_selection(acts)
+print("Selected:", [a[0] for a in result])   # ['A', 'C', 'F']
+print("Count:", len(result))                  # 3</pre>
+</div></section>
+
+<section class="slide" id="x11"><div class="wrap">
+<div class="kick">Greedy Algorithms · 6 of 8</div>
+<h2>Activity Selection Time Complexity</h2>
+<div class="tw"><table><tr><th>Step</th><th>Time</th></tr><tr><td>Sort by finish time</td><td>O(n log n)</td></tr><tr><td>Selection pass (scan)</td><td>O(n)</td></tr><tr><td>Total</td><td>O(n log n + n) = O(n log n)</td></tr></table></div><div class="grid"><div class="card"><h3>The scan is O(n)</h3><ul><li>The loop visits each activity exactly once.</li><li>Each visit: one comparison, at most two assignments.</li><li>n visits × constant work = O(n)</li></ul></div><div class="card"><h3>Sorting dominates</h3><ul><li>The larger term wins when costs are added.</li><li>Line 1 (the sort) is the expensive part; lines 4 to 7 check each activity once.</li><li>Sorted input: only the scan remains, O(n).</li></ul></div></div>
+</div></section>
+
+<section class="slide" id="x12"><div class="wrap">
+<div class="kick">Greedy Algorithms · 6 of 8</div>
+<h2>Cases, Space, and Other Approaches</h2>
+<div class="tw"><table><tr><th>Case</th><th>Bound</th><th>Explanation</th></tr><tr><td>Unsorted input</td><td>O(n log n)</td><td>The sort always runs; merge or heap sort guarantee the worst case</td></tr><tr><td>Already sorted</td><td>O(n)</td><td>Only the scan remains</td></tr><tr><td>Space</td><td>O(n)</td><td>Counting the output; auxiliary O(1) with an in-place sort (heap sort)</td></tr></table></div><div class="tw"><table><tr><th>Approach</th><th>Time</th><th>How it works</th></tr><tr><td>Brute force</td><td>Exponential</td><td>Tries all 2ⁿ subsets, keeps the largest compatible one</td></tr><tr><td>Dynamic programming (textbook)</td><td>O(n³)</td><td>Solves subproblems over ranges of activities</td></tr><tr><td>Dynamic programming + binary search</td><td>O(n log n)</td><td>Sort, then one binary search per activity</td></tr><tr><td>Greedy, earliest finish</td><td>O(n log n)</td><td>Sort once, scan once; O(n) on sorted input</td></tr></table></div>
+</div></section>
+
+<section class="slide" id="x13"><div class="wrap">
+<div class="kick">Greedy Algorithms · 7 of 8</div>
+<h2>Why Earliest Finish Works</h2>
+<p>Let <b>g</b> be the greedy first pick and <b>O</b> any optimal schedule.</p><div class="grid"><div class="card"><h3>Exchange argument</h3><ol><li>Let x be the first activity in O.</li><li>g finishes no later than x, so swapping creates no overlap.</li><li>Same size, still optimal: some optimal solution starts with g.</li><li>Repeat on the compatible rest; by induction greedy is optimal.</li></ol></div><div class="card"><h3>Greedy stays ahead</h3><ul><li><b>Base:</b> greedy’s first pick has the earliest finish of all.</li><li><b>Step:</b> the k-th greedy pick never finishes later than the k-th pick of any optimal solution.</li><li><b>Conclusion:</b> if optimal had more activities, greedy would still have a compatible one left and would not have stopped.</li></ul></div></div><div class="card"><h3>Both properties at work</h3><p><b>Greedy-choice:</b> an optimal solution includes the earliest finisher. <b>Optimal substructure:</b> what remains is the same problem, smaller.</p></div>
+</div></section>
+
+<section class="slide" id="x14"><div class="wrap">
+<div class="kick">Greedy Algorithms · 8 of 8</div>
+<h2>When Greedy Algorithms Fail</h2>
+<p class="mut">A rule that sounds smart still needs a proof.</p><div class="grid"><div class="card bad"><h3>Coin change {1, 3, 4}, make 6</h3><p>Greedy (largest first): 4 + 1 + 1 = 3 coins. Optimal: 3 + 3 = 2 coins. The locally best coin locks you out of a better answer.</p></div><div class="card bad"><h3>0/1 knapsack, capacity 50</h3><p>Items (weight, value): (10,60), (20,100), (30,120). Greedy by value/weight: items 1, 2 = 160. Optimal: items 2, 3 = 220.</p></div><div class="card bad"><h3>Shortest path, negative edges</h3><p>Dijkstra works for non-negative weights. With negative edges a finalized node can later be improved. Use Bellman-Ford.</p></div></div><div class="card"><h3>Where greedy does work</h3><p>Standard coins {1, 5, 10, 25}; fractional knapsack (fractions allowed); Dijkstra with non-negative weights; Huffman, Kruskal, Prim.</p></div>
+</div></section>
+
+<section class="slide" id="x15"><div class="wrap">
+<div class="kick">Greedy Algorithms · 8 of 8</div>
+<h2>How to Tell, and What to Remember</h2>
+<div class="grid"><div class="card"><h3>How to tell if greedy will work</h3><ul><li>Try an exchange argument or “greedy stays ahead”.</li><li>Look for counterexamples on small inputs.</li><li>Check both properties.</li><li>If you cannot prove it, consider dynamic programming.</li></ul></div><div><div class="tw"><table><tr><th>Point</th><th>Answer</th></tr><tr><td>Rule</td><td>Earliest finisher that does not overlap the last pick</td></tr><tr><td>Steps</td><td>Sort by finish time, then scan once</td></tr><tr><td>Result</td><td>Always the maximum number of activities</td></tr><tr><td>Time</td><td>O(n log n); O(n) if sorted</td></tr><tr><td>Space</td><td>O(1) auxiliary; output O(n)</td></tr></table></div></div></div><p class="big">Always prove or test a greedy strategy before trusting it.</p>
+</div></section>
+
+<section class="slide" id="x16"><div class="wrap">
+<div class="kick">Greedy Algorithms · 8 of 8</div>
+<h2>Sources</h2>
+<div class="card"><h3>HKU lecture notes: activity selection</h3><p style="word-break:break-all">i.cs.hku.hk/~hkual/Notes/Greedy/ActivitySelectionProblem.html</p><p class="mut">O(n log n) total, sort dominates, induction proof</p></div><div class="card"><h3>University of Waterloo CS 341: greedy algorithms</h3><p style="word-break:break-all">cs.uwaterloo.ca/~mdtpetri/cs341/Greedy.pdf</p><p class="mut">Earliest-finish in O(n log n), stays-ahead proof</p></div><div class="card"><h3>CLRS section 16.1 solutions</h3><p style="word-break:break-all">walkccc.me/CLRS/Chap16/16.1/</p><p class="mut">Greedy is Θ(n) on sorted input; textbook DP is O(n³)</p></div><div class="card"><h3>Kent State notes: DP for activity selection</h3><p style="word-break:break-all">personal.kent.edu/~rmuhamma/Algorithms/MyAlgorithms/Dynamic/activitydyn.htm</p><p class="mut">DP with binary search is O(n lg n)</p></div>
+</div></section>
+
+<section class="slide" id="q1"><div class="wrap">
+<div class="kick">Quiz Time · Q1–2 of 15</div>
+<h2>Quiz Time: Test Yourself</h2>
+<p class="mut">Tap an answer. Answers stay hidden until the end: your choices and the correct answers appear on the answer key. After you answer, the quiz moves on to the next question by itself. Each question has a countdown: 45 seconds, or 60 for the tracing questions. It starts when the question appears.</p><div class="card q" data-a="b"><h3>Q1<span class="tt"></span></h3><div class="tb"><i></i></div><p><b>Activities as (start, finish): A(1,4) B(3,5) C(0,6) D(5,7) E(3,9) F(5,9) G(6,10) H(8,11) I(8,12) J(2,14) K(12,16). Which set does earliest-finish greedy return?</b></p><button class="opt" data-o="a">A. {B, D, H, K}</button><button class="opt" data-o="b">B. {A, D, H, K}</button><button class="opt" data-o="c">C. {C, G, K}</button><button class="opt" data-o="d">D. {A, D, G, K}</button></div><div class="card q" data-a="a"><h3>Q2<span class="tt"></span></h3><div class="tb"><i></i></div><p><b>Sorted by finish: a(0,3) b(2,4) c(3,6) d(5,7) e(6,8) f(8,10) g(9,11) h(10,12). Touching endpoints are compatible. How many activities does earliest-finish select?</b></p><button class="opt" data-o="a">A. 5</button><button class="opt" data-o="b">B. 4</button><button class="opt" data-o="c">C. 6</button><button class="opt" data-o="d">D. 7</button></div>
+</div></section>
+
+<section class="slide" id="q3"><div class="wrap">
+<div class="kick">Quiz Time · Q3–4 of 15</div>
+<h2>Quiz Time: Test Yourself</h2>
+<div class="card q" data-a="c"><h3>Q3<span class="tt"></span></h3><div class="tb"><i></i></div><p><b>Input is already sorted by finish time. What are the tightest time bound and auxiliary space (not counting the output)?</b></p><button class="opt" data-o="a">A. O(n log n) time, O(1) space</button><button class="opt" data-o="b">B. O(n) time, O(n) space</button><button class="opt" data-o="c">C. O(n) time, O(1) space</button><button class="opt" data-o="d">D. O(log n) time, O(1) space</button></div><div class="card q" data-a="d"><h3>Q4<span class="tt"></span></h3><div class="tb"><i></i></div><p><b>Which input shows that “always pick the shortest activity that fits” is NOT optimal?</b></p><button class="opt" data-o="a">A. (1,3), (4,6), (7,9)</button><button class="opt" data-o="b">B. (0,10), (1,2), (3,4)</button><button class="opt" data-o="c">C. (1,4), (3,5), (5,8)</button><button class="opt" data-o="d">D. (1,5), (4,6), (5,9)</button></div>
+</div></section>
+
+<section class="slide" id="q5"><div class="wrap">
+<div class="kick">Quiz Time · Q5–6 of 15</div>
+<h2>Quiz Time: Test Yourself</h2>
+<div class="card q" data-a="c"><h3>Q5<span class="tt"></span></h3><div class="tb"><i></i></div><p><b>Sorted by finish: P(2,5) Q(5,8) R(3,8) S(8,11) T(7,11) U(11,13). How many activities does earliest-finish select (touching endpoints are compatible)?</b></p><button class="opt" data-o="a">A. 3</button><button class="opt" data-o="b">B. 5</button><button class="opt" data-o="c">C. 4</button><button class="opt" data-o="d">D. 6</button></div><div class="card q" data-a="d"><h3>Q6<span class="tt"></span></h3><div class="tb"><i></i></div><p><b>In the exchange argument we replace the first activity x of an optimal schedule O with the greedy pick g. Why is the new schedule still conflict-free?</b></p><button class="opt" data-o="a">A. g starts earlier than x</button><button class="opt" data-o="b">B. g is shorter than x</button><button class="opt" data-o="c">C. g overlaps fewer activities than x</button><button class="opt" data-o="d">D. g finishes no later than x, so it ends before the second activity of O begins</button></div>
+</div></section>
+
+<section class="slide" id="q7"><div class="wrap">
+<div class="kick">Quiz Time · Q7–8 of 15</div>
+<h2>Quiz Time: Test Yourself</h2>
+<div class="card q" data-a="a"><h3>Q7<span class="tt"></span></h3><div class="tb"><i></i></div><p><b>In the “greedy stays ahead” proof, which invariant is proved by induction?</b></p><button class="opt" data-o="a">A. The k-th greedy activity finishes no later than the k-th activity of any optimal solution</button><button class="opt" data-o="b">B. The k-th greedy activity starts no earlier than the k-th activity of any optimal solution</button><button class="opt" data-o="c">C. The k-th greedy activity is shorter than the k-th activity of any optimal solution</button><button class="opt" data-o="d">D. Greedy has fewer conflicts after k picks than any optimal solution</button></div><div class="card q" data-a="c"><h3>Q8<span class="tt"></span></h3><div class="tb"><i></i></div><p><b>For which coin system and target does “take the largest coin that fits” fail to give the minimum number of coins?</b></p><button class="opt" data-o="a">A. {1, 5, 10, 25}, target 63</button><button class="opt" data-o="b">B. {1, 2, 5, 10}, target 39</button><button class="opt" data-o="c">C. {1, 5, 12}, target 15</button><button class="opt" data-o="d">D. {1, 2, 4, 8}, target 15</button></div>
+</div></section>
+
+<section class="slide" id="q9"><div class="wrap">
+<div class="kick">Quiz Time · Q9–10 of 15</div>
+<h2>Quiz Time: Test Yourself</h2>
+<div class="card q" data-a="b"><h3>Q9<span class="tt"></span></h3><div class="tb"><i></i></div><p><b>For coin change with coins {1, 3, 4} and target 6, which statement is correct?</b></p><button class="opt" data-o="a">A. Both properties hold, so greedy is optimal</button><button class="opt" data-o="b">B. Greedy-choice property fails but optimal substructure holds, so DP is needed</button><button class="opt" data-o="c">C. Optimal substructure fails but greedy-choice property holds</button><button class="opt" data-o="d">D. Both properties fail, so no efficient algorithm exists</button></div><div class="card q" data-a="c"><h3>Q10<span class="tt"></span></h3><div class="tb"><i></i></div><p><b>Why can Dijkstra give wrong answers when some edges have negative weights?</b></p><button class="opt" data-o="a">A. Its priority queue cannot hold negative numbers</button><button class="opt" data-o="b">B. The problem loses optimal substructure</button><button class="opt" data-o="c">C. A node already finalized as closest can later be reached more cheaply via a negative edge</button><button class="opt" data-o="d">D. It visits nodes in the wrong order on cycles</button></div>
+</div></section>
+
+<section class="slide" id="q11"><div class="wrap">
+<div class="kick">Quiz Time · Q11–12 of 15</div>
+<h2>Quiz Time: Test Yourself</h2>
+<div class="card q" data-a="b"><h3>Q11<span class="tt"></span></h3><div class="tb"><i></i></div><p><b>Why does greedy-by-value/weight work for fractional knapsack but fail for 0/1 knapsack?</b></p><button class="opt" data-o="a">A. Fractional has optimal substructure, 0/1 does not</button><button class="opt" data-o="b">B. Fractional can fill leftover capacity exactly with part of the next-best item; in 0/1 it can be wasted</button><button class="opt" data-o="c">C. In 0/1 all items have identical ratios</button><button class="opt" data-o="d">D. Greedy only works for few items</button></div><div class="card q" data-a="d"><h3>Q12<span class="tt"></span></h3><div class="tb"><i></i></div><p><b>Which statement about solving activity selection is correct for unsorted input of n activities?</b></p><button class="opt" data-o="a">A. Earliest-finish greedy is O(n) because the scan is one pass</button><button class="opt" data-o="b">B. The textbook dynamic program is O(n log n) and faster than greedy</button><button class="opt" data-o="c">C. Brute force over all subsets is O(n²)</button><button class="opt" data-o="d">D. DP with binary search matches greedy at O(n log n)</button></div>
+</div></section>
+
+<section class="slide" id="q13"><div class="wrap">
+<div class="kick">Quiz Time · Q13–14 of 15</div>
+<h2>Quiz Time: Test Yourself</h2>
+<div class="card q" data-a="c"><h3>Q13<span class="tt"></span></h3><div class="tb"><i></i></div><p><b>Several activities tie for the earliest finish time. Which statement is correct?</b></p><button class="opt" data-o="a">A. Pick the shortest, or greedy can be suboptimal</button><button class="opt" data-o="b">B. Pick the earliest start, or greedy can be suboptimal</button><button class="opt" data-o="c">C. Any of them is a safe greedy choice and the result has the same maximum size</button><button class="opt" data-o="d">D. Ties make the problem NP-hard</button></div><div class="card q" data-a="b"><h3>Q14<span class="tt"></span></h3><div class="tb"><i></i></div><p><b>To guarantee the O(n log n) worst-case bound for earliest-finish activity selection, which sorting choice is correct?</b></p><button class="opt" data-o="a">A. Insertion sort or selection sort</button><button class="opt" data-o="b">B. Merge sort or heap sort</button><button class="opt" data-o="c">C. Quicksort with the first element as pivot</button><button class="opt" data-o="d">D. Bubble sort with early exit</button></div>
+</div></section>
+
+<section class="slide" id="q15"><div class="wrap">
+<div class="kick">Quiz Time · Q15 of 15</div>
+<h2>Quiz Time: Test Yourself</h2>
+<div class="card q" data-a="d"><h3>Q15<span class="tt"></span></h3><div class="tb"><i></i></div><p><b>Which statement about the space used by earliest-finish activity selection is correct?</b></p><button class="opt" data-o="a">A. Total space is always O(1) because only last is stored</button><button class="opt" data-o="b">B. Space is O(n²) because every pair is compared</button><button class="opt" data-o="c">C. Auxiliary space is O(1) with any sorting algorithm</button><button class="opt" data-o="d">D. Counting the output it is O(n); auxiliary space is O(1) only with an in-place sort such as heap sort</button></div>
+</div></section>
+
+<section class="slide" id="qkey"><div class="wrap">
+<div class="kick">Quiz Answer Key</div>
+<h2>Quiz Answer Key</h2>
+<p class="big" id="score">Your score: 0 / 15 (answered 0)</p><div class="tw"><table><tr><th>Q</th><th>Answer</th><th>Key idea</th><th>You</th></tr><tr><td>1</td><td class="take">B</td><td>{A,D,H,K}: A finishes first</td><td class="you">—</td></tr><tr><td>2</td><td class="take">A</td><td>5: a, c, e, f, h</td><td class="you">—</td></tr><tr><td>3</td><td class="take">C</td><td>O(n), O(1): only the scan</td><td class="you">—</td></tr><tr><td>4</td><td class="take">D</td><td>(4,6) blocks both others</td><td class="you">—</td></tr><tr><td>5</td><td class="take">C</td><td>4: P, Q, S, U</td><td class="you">—</td></tr><tr><td>6</td><td class="take">D</td><td>g finishes no later than x</td><td class="you">—</td></tr><tr><td>7</td><td class="take">A</td><td>k-th pick finishes no later</td><td class="you">—</td></tr><tr><td>8</td><td class="take">C</td><td>{1,5,12}: 4 coins vs 3</td><td class="you">—</td></tr><tr><td>9</td><td class="take">B</td><td>Greedy-choice fails, substructure holds</td><td class="you">—</td></tr><tr><td>10</td><td class="take">C</td><td>Finalized node improved by negative edge</td><td class="you">—</td></tr><tr><td>11</td><td class="take">B</td><td>0/1 can waste leftover capacity</td><td class="you">—</td></tr><tr><td>12</td><td class="take">D</td><td>DP + binary search is O(n log n)</td><td class="you">—</td></tr><tr><td>13</td><td class="take">C</td><td>Any tie is a safe pick</td><td class="you">—</td></tr><tr><td>14</td><td class="take">B</td><td>Merge or heap sort</td><td class="you">—</td></tr><tr><td>15</td><td class="take">D</td><td>O(n) with output; O(1) aux in place</td><td class="you">—</td></tr></table></div><div class="card"><h3>Your score</h3><p>13–15: greedy master 🐷 · 9–12: nice work · under 9: review slides 5 to 14</p></div>
+</div></section>
+
+<div id="mas" aria-hidden="true"><b>🐷</b><div id="say"></div></div>
+<div id="nav"><button class="ghost" id="pv">← Prev</button><span id="count"></span><button id="nt">Next →</button></div>
+
+<script>
+const S=[...document.querySelectorAll('.slide')];let i=0,r=0;
+const SEL='.wrap>p,.wrap>.card,.wrap>.tw,.wrap>pre,.wrap>div:not(.grid):not(.kick),.wrap>.grid>.card,.steps li,.wrap>.grid>div>h3,.wrap>.grid>div>.card';
+const items=S.map(s=>[...s.querySelectorAll(SEL)]);
+items.forEach(a=>a.forEach(e=>e.classList.add('rv')));
+function setR(k){r=k;items[i].forEach((e,m)=>e.classList.toggle('in',m<k));}
+function go(n){
+  const j=Math.max(0,Math.min(S.length-1,n));
+  document.body.style.setProperty('--dx',j>=i?'40px':'-40px');
+  const fwd=j>=i;
+  i=j;
+  setR(fwd?0:items[i].length);
+  S.forEach((s,k)=>s.classList.toggle('on',k===i));
+  S[i].scrollTop=0;
+  document.getElementById('bar').style.width=((i+1)/S.length*100)+'%';
+  document.getElementById('count').textContent=(i+1)+' / '+S.length;
+  sync();
+  try{history.replaceState(null,'','#'+(i+1))}catch(e){}
+}
+document.getElementById('pv').onclick=()=>prv();
+document.getElementById('nt').onclick=()=>nxt();
+addEventListener('keydown',e=>{
+  if(['ArrowRight','PageDown',' '].includes(e.key)){e.preventDefault();nxt()}
+  if(['ArrowLeft','PageUp'].includes(e.key)){e.preventDefault();prv()}
+});
+let x0=null;
+addEventListener('touchstart',e=>x0=e.touches[0].clientX,{passive:true});
+addEventListener('touchend',e=>{if(x0===null)return;const d=e.changedTouches[0].clientX-x0;if(Math.abs(d)>70)(d<0?nxt():prv());x0=null});
+
+let stage=0;
+document.querySelectorAll('.steps li,.card li,.card p,.card h3,table tr').forEach(e=>{const sib=[...e.parentElement.children];e.style.setProperty('--k',sib.indexOf(e))});
+function sync(){document.getElementById('pv').disabled=(i===0&&r===0);document.getElementById('nt').disabled=(i===S.length-1&&r===items[i].length);document.getElementById('count').textContent=(i+1)+' / '+S.length+'  ·  '+r+'/'+items[i].length;document.getElementById('say').textContent=TIPS[i]||'';if(i===S.length-1&&r===items[i].length){if(!popped){popped=true;pop()}}else popped=false;}
+function render1(){
+  document.querySelectorAll('#p1a .st').forEach((e,k)=>e.classList.toggle('show',k<Math.min(stage,4)));
+  document.getElementById('p1a').hidden=stage>=5;
+  document.getElementById('p1b').hidden=stage<5;
+  sync();
+}
+function nxt(){if(r<items[i].length){setR(r+1);sync()}else go(i+1)}
+function prv(){if(r>0){setR(r-1);sync()}else go(i-1)}
+addEventListener('click',e=>{if(e.target.closest('button,a,#nav'))return;nxt()});
+const TIPS=["Here's the map. Where shall we go first?","Hi! I'm Gree. I always grab the best-looking choice!","Fast and simple, but I never look back!","Two magic ingredients: a safe first pick and a smaller problem.","One room, lots of requests. Who gets in?","Pick whoever finishes first!","Tempting rules can trick you. Prove it!","Press Next step and watch me choose!","See the bars? Blue ones are my picks.","Eleven activities, only four picks!","Sort first, then one little scan.","Sorting is the slow part: O(n log n).","Already sorted? Then it's just O(n)!","Finishing early never hurts. Swap and see!","Uh oh, sometimes greedy gets fooled.","Prove it or test it before you trust it.","Thanks for reading! You did great!","Quiz time! Read every option twice.","Trace it on paper, step by step.","Watch the touching endpoints!","Think: which property fails?","Sort first, then scan. You've got this!","Eliminate the impossible choices.","Remember: finishing early never hurts.","Last one! Then check the answer key.","No peeking until you've tried them all!"];
+let popped=false;
+function pop(){const E=['🪙','⭐','✨','💙','🎉'];for(let k=0;k<28;k++){const s=document.createElement('span');s.className='cf';s.textContent=E[k%5];s.style.left=Math.random()*100+'vw';s.style.animationDuration=(1.8+Math.random()*1.6)+'s';s.style.animationDelay=(Math.random()*.4)+'s';s.style.fontSize=(16+Math.random()*16)+'px';document.body.appendChild(s);setTimeout(()=>s.remove(),4300)}}
+function rec(q){const c=document.querySelectorAll('#qkey tr')[qn(q)].querySelector('.you');
+  if(q.dataset.late){c.textContent='⏰ none';c.className='you skip';return}
+  const ok=q.dataset.pick===q.dataset.a;c.textContent=q.dataset.pick.toUpperCase()+(ok?' ✓':' ✗');c.className='you '+(ok?'take':'skip')}
+function advance(){let g=0;do{nxt();g++;if(S[i].id==='qkey')break;const it=items[i][r-1];if(it&&it.classList.contains('q'))break}while(g<8)}
+function qn(q){return parseInt(q.querySelector('h3').textContent.replace('Q',''))}
+function showT(q){const tt=q.querySelector('.tt'),bar=q.querySelector('.tb i'),l=+q.dataset.left,lim=+q.dataset.lim;
+  tt.textContent=q.dataset.late?'⏰ Time’s up!':'⏱ '+l+'s';bar.style.width=(l/lim*100)+'%';
+  const low=l<=10&&!q.dataset.done;tt.classList.toggle('low',low);bar.classList.toggle('low',low)}
+function timeUp(q){q.dataset.done=1;q.dataset.late=1;answered++;q.classList.add('late');
+  showT(q);rec(q);updScore();setTimeout(advance,900)}
+document.querySelectorAll('.q').forEach(q=>{q.dataset.lim=[1,2,5].includes(qn(q))?60:45;q.dataset.left=q.dataset.lim;showT(q)});
+setInterval(()=>{document.querySelectorAll('.q').forEach(q=>{
+  if(q.dataset.done||!q.classList.contains('in')||!q.closest('.slide').classList.contains('on'))return;
+  q.dataset.left=+q.dataset.left-1;showT(q);if(+q.dataset.left<=0)timeUp(q)})},1000);
+let score=0,answered=0;
+function updScore(){document.getElementById('score').textContent='Your score: '+score+' / 15 (answered '+answered+')';if(answered===15)pop()}
+addEventListener('click',e=>{
+  const g=e.target.closest('[data-go]');
+  if(g){e.preventDefault();go(+g.dataset.go-1);return}
+  const b=e.target.closest('.opt');
+  if(b){const q=b.closest('.q');if(q.dataset.done)return;q.dataset.done=1;answered++;q.dataset.pick=b.dataset.o;b.classList.add('sel');
+    if(b.dataset.o===q.dataset.a)score++;showT(q);rec(q);updScore();setTimeout(advance,600)}
+});
+// Slide 5 tracer
+const A=[['A',1,3],['B',2,5],['C',4,7],['D',6,9],['E',8,10],['F',9,12]];
+let step=0;
+function draw(){
+  const tb=document.getElementById('tb'),tl=document.getElementById('tl');
+  tb.innerHTML='';tl.innerHTML='';let last=null;const picked=[];
+  A.forEach((a,k)=>{
+    const done=k<step;let take=false,chk='',dec='';
+    if(done){
+      if(last===null){take=true;chk='first activity'}
+      else{take=a[1]>=last;chk=a[1]+(take?' ≥ ':' < ')+last}
+      dec=take?'Take (last = '+a[2]+')':'Skip';
+      if(take){last=a[2];picked.push(a[0])}
+      tb.insertAdjacentHTML('beforeend','<tr><td>'+a[0]+'</td><td>'+a[1]+'</td><td>'+a[2]+'</td><td>'+chk+'</td><td class="'+(take?'take':'skip')+'">'+dec+'</td></tr>');
+    }
+    const r=document.createElement('div');
+    r.style.marginLeft=(a[1]/12*100)+'%';r.style.width=((a[2]-a[1])/12*100)+'%';
+    if(done&&take)r.className='t';r.textContent=a[0]+' ('+a[1]+'–'+a[2]+')';
+    if(done&&!take)r.style.opacity='.35';
+    tl.appendChild(r);
+  });
+  document.getElementById('res').textContent=step===A.length?'Answer: '+picked.join(', ')+' = '+picked.length+' activities':'';
+  document.getElementById('nx').disabled=step===A.length;if(step===A.length)pop();
+}
+document.getElementById('nx').onclick=()=>{step++;draw()};
+document.getElementById('rs').onclick=()=>{step=0;draw()};
+draw();
+go((parseInt(location.hash.slice(1))||1)-1);
+</script>
+</body>
+</html>
